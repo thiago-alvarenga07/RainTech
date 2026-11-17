@@ -1,116 +1,160 @@
 # RainTech
 
+<p align="center">
+  <img src="assets/raintech_logo.svg" alt="Logo do RainTech" width="180">
+</p>
+
 Aplicativo Flutter para acompanhar níveis de reservatórios, chuva e indicadores
 de abastecimento, com painéis por cidade, alertas explicáveis e revisão humana.
 
-## Estrutura do código
+## Problema e público-alvo
 
-O código separa a interface, o estado da aplicação, o acesso a dados e os
-cálculos. Telas e widgets apresentam dados e encaminham ações ao estado; não
-acessam diretamente o Supabase nem a persistência local.
+Dados de reservatórios e precipitação podem ser difíceis de acompanhar em
+conjunto. O RainTech reúne essas informações e destaca sinais de atenção, como
+queda nos níveis armazenados e períodos com pouca chuva, para apoiar o
+planejamento hídrico.
+
+O público principal são equipes técnicas de operadoras de abastecimento e
+gestores públicos. Pesquisadores, estudantes e cidadãos interessados em
+recursos hídricos também podem consultar os indicadores. O impacto social
+esperado é facilitar a identificação antecipada de riscos e apoiar decisões de
+abastecimento mais informadas; o aplicativo não substitui a avaliação dos
+responsáveis.
+
+## Integrantes
+
+| Integrante | RM | Responsabilidades |
+| --- | --- | --- |
+| Thiago Sobral de Alvarenga | 562695 | Estrutura inicial, telas de início, preferências e precipitação; acessibilidade, privacidade e indicador social; permissão de internet para a build Android. |
+| Diego Antonio Silva Mendes | 565509 | Tema e widgets reutilizáveis; estado compartilhado, rotas e cache offline; painéis de reservatórios, chuva e demanda; alertas e revisão humana. |
+
+## Demonstração visual
+
+<table>
+  <tr>
+    <td align="center"><strong>Início</strong><br><img src="assets/Home.jpg" alt="Tela inicial" width="220"></td>
+    <td align="center"><strong>Reservatórios</strong><br><img src="assets/painel_reservatorio.jpg" alt="Painel de reservatórios" width="220"></td>
+    <td align="center"><strong>Chuva</strong><br><img src="assets/painel_chuva.jpg" alt="Painel de chuva" width="220"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Demanda</strong><br><img src="assets/painel_demanda.jpg" alt="Painel de demanda" width="220"></td>
+    <td align="center"><strong>Alertas</strong><br><img src="assets/alertas.jpg" alt="Tela de alertas" width="220"></td>
+    <td align="center"><strong>Preferências</strong><br><img src="assets/ajustes.jpg" alt="Tela de preferências" width="220"></td>
+  </tr>
+</table>
+
+## Funcionalidades
+
+- [x] Resumo dos dados hídricos na tela inicial.
+- [x] Painéis de reservatórios, precipitação e demanda.
+- [x] Indicadores e gráficos para comparar os dados disponíveis.
+- [x] Geração de alertas com evidências, nível de confiança e limitações.
+- [x] Revisão humana dos alertas.
+- [x] Cache local do último snapshot para consulta quando a conexão falha.
+- [x] Preferências de tema, alto contraste e tamanho do texto.
+- [x] Consentimento explícito antes de salvar justificativas de avaliações de
+  alertas no aparelho.
+- [x] Indicador de benefício social estimado na tela inicial; é uma estimativa
+  sintética, não uma medição de impacto real.
+
+## Dados e alertas
+
+O aplicativo consulta uma base pública de dados hídricos disponibilizada ao
+RainTech pelo Supabase. O repositório lê as tabelas `reservoir_levels` e
+`rainfall`, com a coluna `Date` e as colunas de leitura `POONDI`,
+`CHOLAVARAM`, `REDHILLS` e `CHEMBARAMBAKKAM`, até 30 registros recentes.
+
+| Alerta/indicador | Regra usada |
+| --- | --- |
+| Nível do reservatório | Atenção abaixo de 45%; crítico abaixo de 25%. |
+| Projeção de nível | Regressão linear sobre até 14 registros recentes, com horizonte de até 60 dias. A projeção é sinalizada como pouco confiável com menos de 7 registros ou `R² < 0,5`. |
+| Autonomia | Estimativa baseada em consumo de referência de 250 L por pessoa/dia; atenção abaixo de 60 dias e risco alto abaixo de 30 dias. |
+| Estiagem | Média inferior a 1 mm de chuva por dia durante pelo menos 5 dias consecutivos. |
+
+**Limitações e confiabilidade:** a projeção extrapola tendências históricas e
+não prevê chuva futura, evaporação, transferências entre reservatórios ou
+manobras operacionais. A estimativa de demanda e população atendida é
+sintética. Dados antigos, incompletos, em cache ou de demonstração reduzem a
+confiabilidade. O conjunto considera apenas os reservatórios e estações
+presentes na base, podendo não representar outras áreas ou populações. Por isso,
+os alertas são apoio à análise e não devem ser tratados como previsão garantida
+ou decisão automática.
+
+Sem as duas configurações do Supabase, o aplicativo usa dados sintéticos de
+demonstração. A população atendida e as estimativas em `DemandModel` também
+são sintéticas e não devem ser interpretadas como impacto social medido.
+
+## Privacidade e inclusão
+
+- Os níveis de reservatórios e as medições de chuva vêm de uma base pública.
+- O último snapshot e as preferências visuais são armazenados localmente para
+  permitir consulta offline.
+- Justificativas de texto livre nas avaliações podem conter dados pessoais.
+  Elas só são persistidas no aparelho após consentimento explícito; revogar o
+  consentimento remove essas avaliações locais.
+- O aplicativo oferece alto contraste e ajuste do tamanho do texto, além de
+  rótulos semânticos em controles e informações relevantes para leitores de
+  tela.
+
+## Tecnologias e decisões técnicas
+
+| Tecnologia/decisão | Justificativa |
+| --- | --- |
+| Flutter e Material 3 | Interface multiplataforma com componentes consistentes. |
+| Provider com `ChangeNotifier` | Compartilha estados reativos sem uma camada de gerenciamento mais complexa que a necessária. |
+| Supabase | Acesso à base pública configurada para o projeto. |
+| `SharedPreferences` | Armazena o snapshot pequeno, as preferências e as avaliações locais consentidas. |
+| `fl_chart` | Exibe séries e comparações nos painéis. |
+| Regras determinísticas para alertas | Mantêm limiares e evidências inspecionáveis e deixam a decisão final com uma pessoa. |
+
+A estrutura separa apresentação, estado, dados e análises. Telas e widgets não
+acessam diretamente o Supabase nem a persistência local:
 
 ```text
 lib/
-├── main.dart                 # Inicialização e configuração das dependências
-├── app.dart                  # Árvore principal, providers, tema e rotas
-├── analytics/                # Indicadores e regras para geração de alertas
-├── core/
-│   ├── routes/               # Rotas nomeadas e navegação
-│   └── theme/                # Cores, espaçamento e temas
-├── data/
-│   ├── water_repository.dart # Leitura e conversão de dados do Supabase
-│   └── app_storage.dart      # Cache e preferências locais
+├── main.dart                 # Inicialização e configuração
+├── app.dart                  # Providers, tema e rotas
+├── analytics/                # Indicadores e regras de alertas
+├── core/                     # Rotas e tema
+├── data/                     # Repositório e armazenamento local
 ├── models/                   # Modelos de domínio e serialização
 ├── screens/                  # Páginas e composição das telas
-│   ├── alerts/               # Lista e detalhe de alertas
-│   └── dashboards/           # Painéis de reservatórios, chuva e demanda
-├── state/                    # Estado compartilhado e coordenação dos fluxos
+├── state/                    # Estado compartilhado e fluxos
 └── widgets/                  # Componentes reutilizáveis e gráficos
-    └── charts/
 test/
 └── widget_test.dart          # Testes de interface e fluxos principais
 ```
 
-### Papel de cada pasta
+`WaterDataState` coordena carregamento e cache; `AlertsState` recalcula alertas
+e gerencia revisões; `SettingsState` mantém preferências. `WaterRepository`
+consulta e converte dados, enquanto `AppStorage` cuida da persistência local.
+`AlertEngine` aplica as regras e apresenta evidências, confiança e limitações.
 
-- **Inicialização e composição** — `main.dart` lê a configuração do Supabase,
-  inicializa o armazenamento e monta o repositório. `app.dart` registra os
-  estados compartilhados, temas e rotas do aplicativo.
-- **Acesso a dados (`data/`)** — `WaterRepository` consulta as tabelas
-  `reservoir_levels` e `rainfall`, converte os registros em modelos e fornece
-  dados de demonstração quando não há cliente Supabase configurado.
-  `AppStorage` persiste o snapshot para uso offline, preferências e, somente
-  após consentimento, avaliações de alertas.
-- **Estado (`state/`)** — `WaterDataState` coordena carregamento, cache,
-  atualização e erros dos dados. `AlertsState` recalcula alertas a partir do
-  estado hídrico e gerencia as decisões humanas. `SettingsState` mantém as
-  preferências visuais e de acessibilidade.
-- **Modelos (`models/`)** — representam snapshots de água, reservatórios,
-  observações de chuva, alertas, decisões e limites. Também concentram
-  serialização e propriedades derivadas dos dados.
-- **Análises (`analytics/`)** — `Indicators` e `DemandModel` calculam métricas;
-  `AlertEngine` aplica regras e limiares para produzir alertas com evidências,
-  confiança, limitações e ações sugeridas. O motor não executa as ações: a
-  decisão final permanece humana.
-- **Apresentação (`screens/`, `widgets/`)** — telas organizam navegação e
-  conteúdo; widgets reutilizáveis exibem indicadores, gráficos, alertas e
-  estados de carregamento, erro ou operação offline.
-- **Infraestrutura de interface (`core/`)** — concentra rotas, cores,
-  espaçamentos e temas, evitando que essas definições fiquem espalhadas pelas
-  telas.
-- **Testes (`test/`)** — verificam navegação, apresentação dos painéis,
-  preferências e consentimento para persistir avaliações.
+## Como executar
 
-## Fluxo dos dados
+É necessário ter Flutter instalado. Para executar em modo de demonstração:
 
-1. `main.dart` lê `SUPABASE_URL` e `SUPABASE_ANON_KEY`. As duas configurações
-   devem ser fornecidas juntas; se ambas forem omitidas, o app usa dados de
-   demonstração.
-2. `WaterDataState` solicita um snapshot ao `WaterRepository`.
-3. O repositório consulta até 30 registros recentes de reservatórios e chuva e
-   os converte em `WaterSnapshot`.
-4. Snapshots válidos são guardados localmente. Se a consulta falhar, o estado
-   tenta carregar o último snapshot salvo e informa à interface quando está
-   exibindo dados de cache.
-5. `AlertsState` recalcula os alertas quando recebe um snapshot atualizado.
-   As telas observam os estados e exibem os resultados.
+```powershell
+git clone https://github.com/thiago-alvarenga07/RainTech.git
+Set-Location RainTech
+flutter pub get
+flutter run
+```
 
-No Supabase, o repositório espera as tabelas `reservoir_levels` e `rainfall`,
-com a coluna `Date` e as colunas de leitura `POONDI`, `CHOLAVARAM`, `REDHILLS`
-e `CHEMBARAMBAKKAM`.
+Para consultar a base pelo Supabase, configure a URL e a chave `anon` do
+projeto antes de executar:
 
-O indicador de população atendida e as estimativas de demanda em
-`DemandModel.servedPopulation` são sintéticos para demonstração; não são
-consultados dessas tabelas nem devem ser interpretados como impacto medido.
+```powershell
+$env:SUPABASE_URL = "https://seu-projeto.supabase.co"
+$env:SUPABASE_ANON_KEY = "sua-chave-anon"
+flutter run --dart-define="SUPABASE_URL=$env:SUPABASE_URL" --dart-define="SUPABASE_ANON_KEY=$env:SUPABASE_ANON_KEY"
+```
 
-## Decisões técnicas
+As tabelas precisam permitir a leitura necessária pela chave pública. Não use
+uma chave `service_role` no aplicativo. Uma build Android para instalação está
+disponível na seção [Releases](https://github.com/thiago-alvarenga07/RainTech/releases).
 
-| Escolha | Justificativa |
-| --- | --- |
-| Provider com `ChangeNotifier` | Compartilha estados pequenos e reativos sem introduzir uma camada de gerenciamento mais complexa que a necessária. |
-| Repositório separado da interface | Isola consultas e conversão de dados; telas dependem do estado da aplicação, não do cliente Supabase. |
-| `SharedPreferences` | Atende ao cache pequeno do snapshot e às preferências locais. Não é usado como banco para grandes volumes. |
-| Regras determinísticas para alertas | Tornam limiares, evidências e limitações inspecionáveis; preservam a avaliação humana em vez de automatizar decisões. |
-| `fl_chart` | Fornece gráficos para séries e comparações apresentados nos painéis. |
+## Licença
 
-## Contribuidores e responsabilidades
-
-### Thiago Sobral — [@thiago-alvarenga07](https://github.com/thiago-alvarenga07)
-
-- Estrutura inicial do app e telas de início, preferências e precipitação
-- Acessibilidade (alto contraste e tamanho do texto), privacidade e indicador
-  social na tela inicial
-- Permissão de internet necessária para a build Android de release acessar o
-  backend
-
-### Dimeendes — [@Eunaoseiler](https://github.com/Eunaoseiler)
-
-- Tema centralizado e widgets reutilizáveis
-- Estado compartilhado com Provider, rotas nomeadas e cache offline
-- Painéis de reservatórios, chuva e demanda, gráficos, histórico e indicadores
-  relacionados
-- Alertas preditivos com evidências, confiança, limitações e revisão humana
-
-## Aplicativo para instalação
-
-Uma build Android do aplicativo está disponível na seção releases deste repositório.
+Projeto acadêmico FIAP — Global Solution 2026.2. O repositório não declara uma
+licença open-source específica.
