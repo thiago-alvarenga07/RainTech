@@ -12,7 +12,7 @@ Future<Widget> buildApp() async {
 }
 
 void main() {
-  testWidgets('exibe o painel e navega para precipitação', (tester) async {
+  testWidgets('exibe a visão geral e navega pelos 3 painéis', (tester) async {
     await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 
@@ -24,19 +24,25 @@ void main() {
       findsOneWidget,
     );
     final navigation = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navigation.selectedIndex, 1);
+    expect(navigation.selectedIndex, 0);
     expect(
       navigation.destinations
           .map((destination) => (destination as NavigationDestination).label)
           .toList(),
-      ['Precipitação', 'Início', 'Tema'],
+      ['Início', 'Painéis', 'Ajustes'],
     );
 
-    await tester.tap(find.text('Precipitação'));
+    await tester.tap(find.text('Painéis'));
     await tester.pumpAndSettle();
+    expect(find.text('Reserva total'), findsOneWidget);
 
-    expect(find.text('Próximos dias'), findsOneWidget);
-    expect(find.text('Última leitura por cidade'), findsOneWidget);
+    await tester.tap(find.text('Chuva'));
+    await tester.pumpAndSettle();
+    expect(find.text('Média 7 dias'), findsOneWidget);
+
+    await tester.tap(find.text('Demanda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Consumo e autonomia'), findsOneWidget);
   });
 
   testWidgets('abre o detalhe da cidade pela rota nomeada', (tester) async {
@@ -53,13 +59,14 @@ void main() {
 
     expect(find.text('Detalhe do indicador'.toUpperCase()), findsOneWidget);
     expect(find.text('Nível do reservatório'), findsOneWidget);
+    expect(find.text('Autonomia estimada'), findsOneWidget);
   });
 
   testWidgets('alterna o tema e persiste a preferência', (tester) async {
     await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Tema'));
+    await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
     expect(find.text('Tema claro ativo'), findsOneWidget);
 

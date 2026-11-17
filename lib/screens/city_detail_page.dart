@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../analytics/indicators.dart';
 import '../core/theme/app_spacing.dart';
-import '../models/water_snapshot.dart';
+import '../widgets/charts/category_bar_chart.dart';
+import '../widgets/charts/chart_card.dart';
+import '../widgets/charts/trend_line_chart.dart';
 import '../widgets/info_banner.dart';
-import '../widgets/progress_tile.dart';
 import '../widgets/section_header.dart';
 import '../widgets/snapshot_view.dart';
+import '../widgets/stat_card.dart';
 import '../widgets/water_format.dart';
 
 class CityDetailPage extends StatelessWidget {
@@ -27,7 +30,11 @@ class CityDetailPage extends StatelessWidget {
               child: Text('Cidade não encontrada nos dados atuais.'),
             );
           }
-          final rainHistory = _rainHistoryFor(snapshot);
+          final fillHistory = snapshot.fillHistoryFor(cityName);
+          final change7d = Indicators.change(fillHistory);
+          final rain = snapshot.rainHistoryFor(cityName);
+          final last14 = rain.length > 14 ? rain.sublist(rain.length - 14) : rain;
+          final autonomy = DemandModel.autonomyDays(reservoir);
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -40,31 +47,56 @@ class CityDetailPage extends StatelessWidget {
                     'Dados atualizados em ${formatDate(snapshot.observedAt)}',
               ),
               const OfflineBanner(),
-              const SizedBox(height: AppSpacing.xl),
-              ProgressTile(
-                title: 'Nível do reservatório',
-                ratio: reservoir.fillRatio,
-                caption:
-                    '${formatMcft(reservoir.storageMcft)} de ${formatMcft(reservoir.capacityMcft)} MCFT armazenados',
-              ),
               const SizedBox(height: AppSpacing.lg),
-              SubsectionTitle(
-                'Chuva registrada',
-                trailing: 'últimos ${rainHistory.length} registros',
-              ),
-              ...rainHistory.reversed.map(
-                (entry) => Card(
-                  child: ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.grain),
-                    title: Text(
-                      '${weekdayLabel(entry.$1)}, ${formatDate(entry.$1)}',
-                    ),
-                    trailing: Text(
-                      formatMillimeters(entry.$2),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
+              StatGrid(
+                children: [
+                  StatCard(
+                    icon: Icons.water,
+                    label: 'Nível do reservatório',
+                    value: formatPercent(reservoir.fillRatio),
+                    delta: change7d,
+                    deltaText: change7d == null
+                        ? null
+                        : '${formatPointsDelta(change7d)} em 7 dias',
                   ),
+                  StatCard(
+                    icon: Icons.hourglass_bottom,
+                    label: 'Autonomia estimada',
+                    value: formatDays(autonomy),
+                    deltaText: 'sem chuva, consumo médio',
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ChartCard(
+                title: 'Nível • últimos ${fillHistory.length} dias',
+                semanticSummary:
+                    'Gráfico de linha do nível de $cityName, atualmente '
+                    '${formatPercent(reservoir.fillRatio)}.',
+                chart: TrendLineChart(
+                  series: fillHistory,
+                  minY: 0,
+                  maxY: 1,
+                  thresholds: const [
+                    Indicators.criticalReserve,
+                    Indicators.attentionReserve,
+                  ],
+                  formatValue: formatPercent,
+                ),
+                footer:
+                    '${formatMcft(reservoir.storageMcft)} de ${formatMcft(reservoir.capacityMcft)} MCFT armazenados.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ChartCard(
+                title: 'Chuva diária • últimos ${last14.length} dias',
+                height: 160,
+                semanticSummary:
+                    'Gráfico de barras da chuva em $cityName. Total de '
+                    '${formatMillimeters(last14.fold<double>(0, (a, e) => a + e.$2))} no período.',
+                chart: CategoryBarChart(
+                  labels: [for (final e in last14) '${e.$1.day}'],
+                  values: [for (final e in last14) e.$2],
+                  formatValue: (v) => v.toStringAsFixed(1),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -77,18 +109,5 @@ class CityDetailPage extends StatelessWidget {
         },
       ),
     );
-  }
-
-  List<(DateTime, double)> _rainHistoryFor(WaterSnapshot snapshot) {
-    final recent = snapshot.rainfall.length > 7
-        ? snapshot.rainfall.sublist(snapshot.rainfall.length - 7)
-        : snapshot.rainfall;
-    return recent.map((observation) {
-      final reading = observation.gaugeReadings.firstWhere(
-        (r) => r.name == cityName,
-        orElse: () => RainGaugeReading(name: cityName, rainfallMm: 0),
-      );
-      return (observation.date, reading.rainfallMm);
-    }).toList();
   }
 }

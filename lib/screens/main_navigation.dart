@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'forecast_page.dart';
+import 'dashboards/dashboards_page.dart';
 import 'home_page.dart';
 import 'settings_page.dart';
 
@@ -12,9 +12,9 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
 
-  static const _pages = [ForecastPage(), HomePage(), SettingsPage()];
+  static const _pages = [HomePage(), DashboardsPage(), SettingsPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -27,19 +27,19 @@ class _MainNavigationState extends State<MainNavigation> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.cloud_outlined),
-            selectedIcon: Icon(Icons.cloud),
-            label: 'Precipitação',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Início',
           ),
           NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights),
+            label: 'Painéis',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.tune),
             selectedIcon: Icon(Icons.tune),
-            label: 'Tema',
+            label: 'Ajustes',
           ),
         ],
       ),

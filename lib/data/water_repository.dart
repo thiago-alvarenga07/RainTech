@@ -7,6 +7,15 @@ class WaterRepository {
 
   final SupabaseClient? _client;
 
+  static const historyDays = 30;
+
+  static const _cities = [
+    ('São Paulo', 'POONDI', 3231.0),
+    ('Rio de Janeiro', 'CHOLAVARAM', 881.0),
+    ('Fortaleza', 'REDHILLS', 3300.0),
+    ('Salvador', 'CHEMBARAMBAKKAM', 3645.0),
+  ];
+
   bool get isConnected => _client != null;
 
   Future<WaterSnapshot> loadSnapshot() async {
@@ -17,27 +26,41 @@ class WaterRepository {
         .from('reservoir_levels')
         .select()
         .order('Date', ascending: false)
-        .limit(1);
+        .limit(historyDays);
     final rainfallRows = await client
         .from('rainfall')
         .select()
         .order('Date', ascending: false)
-        .limit(30);
+        .limit(historyDays);
 
-    if (reservoirRows.isEmpty) {
-      throw StateError('A tabela reservoir_levels ainda não tem registros.');
-    }
-    if (rainfallRows.isEmpty) {
-      throw StateError('A tabela rainfall ainda não tem registros.');
+    if (reservoirRows.isEmpty || rainfallRows.isEmpty) {
+      return WaterSnapshot(
+        observedAt: DateTime.now(),
+        reservoirs: const [],
+        rainfall: const [],
+      );
     }
 
     final latest = reservoirRows.first;
     final reservoirs = [
-      _reservoir(latest, 'São Paulo', 'POONDI', 3231),
-      _reservoir(latest, 'Rio de Janeiro', 'CHOLAVARAM', 881),
-      _reservoir(latest, 'Fortaleza', 'REDHILLS', 3300),
-      _reservoir(latest, 'Salvador', 'CHEMBARAMBAKKAM', 3645),
+      for (final (name, column, capacity) in _cities)
+        Reservoir(
+          name: name,
+          storageMcft: _number(latest[column], column),
+          capacityMcft: capacity,
+        ),
     ];
+
+    final history = reservoirRows.map((row) {
+      return ReservoirReading(
+        date: DateTime.parse(row['Date'].toString()),
+        storageByCity: {
+          for (final (name, column, _) in _cities)
+            name: _number(row[column], column),
+        },
+      );
+    }).toList()..sort((a, b) => a.date.compareTo(b.date));
+
     final rainfall = rainfallRows.map((row) {
       return RainObservation(
         date: DateTime.parse(row['Date'].toString()),
@@ -52,19 +75,7 @@ class WaterRepository {
       observedAt: DateTime.parse(latest['Date'].toString()),
       reservoirs: reservoirs,
       rainfall: rainfall,
-    );
-  }
-
-  Reservoir _reservoir(
-    Map<String, dynamic> row,
-    String name,
-    String column,
-    double capacityMcft,
-  ) {
-    return Reservoir(
-      name: name,
-      storageMcft: _number(row[column], column),
-      capacityMcft: capacityMcft,
+      reservoirHistory: history,
     );
   }
 
@@ -76,30 +87,72 @@ class WaterRepository {
     return parsed;
   }
 
+
   WaterSnapshot _demoSnapshot() {
-    final today = DateTime.now();
-    final rainfallAmounts = [0.0, 1.8, 0.0, 4.2, 2.5, 0.7, 0.0, 3.1, 0.0, 1.2];
-    final rainfall = List.generate(rainfallAmounts.length, (index) {
-      final daysAgo = rainfallAmounts.length - index - 1;
-      final rainfall = rainfallAmounts[index];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime dayAgo(int days) =>
+        DateTime(today.year, today.month, today.day - days);
+
+    const rain = [
+      0.0, 2.1, 5.4, 6.8, 3.2, 0.4, 0.0, 0.0, 0.0, 1.2, //
+      4.6, 7.9, 6.1, 2.3, 0.6, 0.0, 0.0, 0.0, 0.0, 1.8, //
+      3.4, 2.2, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, //
+    ];
+
+    final rainfall = List.generate(historyDays, (i) {
+      final mm = rain[i];
       return RainObservation(
-        date: DateTime(today.year, today.month, today.day - daysAgo),
-        poondiMm: rainfall,
-        cholavaramMm: rainfall * 0.8,
-        redhillsMm: rainfall * 1.1,
-        chembarambakkamMm: rainfall * 0.9,
+        date: dayAgo(historyDays - 1 - i),
+        poondiMm: mm,
+        cholavaramMm: mm * 0.8,
+        redhillsMm: mm * 1.1,
+        chembarambakkamMm: mm * 0.9,
+      );
+    });
+
+
+    const finalStorage = {
+      'São Paulo': 1370.0,
+      'Rio de Janeiro': 390.0,
+      'Fortaleza': 1750.0,
+      'Salvador': 1690.0,
+    };
+    const dailyDrop = {
+      'São Paulo': 9.0,
+      'Rio de Janeiro': 3.5,
+      'Fortaleza': 7.0,
+      'Salvador': 4.0,
+    };
+
+    final history = List.generate(historyDays, (i) {
+      final daysToEnd = historyDays - 1 - i;
+      // Chuva acumulada daqui até o fim repõe parte do volume.
+      final rainAfter = rain.sublist(i + 1).fold<double>(0, (a, b) => a + b);
+      return ReservoirReading(
+        date: dayAgo(daysToEnd),
+        storageByCity: {
+          for (final city in finalStorage.keys)
+            city:
+                finalStorage[city]! +
+                dailyDrop[city]! * daysToEnd -
+                rainAfter * dailyDrop[city]! * 0.15,
+        },
       );
     });
 
     return WaterSnapshot(
-      observedAt: DateTime(today.year, today.month, today.day),
-      reservoirs: const [
-        Reservoir(name: 'São Paulo', storageMcft: 1370, capacityMcft: 3231),
-        Reservoir(name: 'Rio de Janeiro', storageMcft: 390, capacityMcft: 881),
-        Reservoir(name: 'Fortaleza', storageMcft: 1750, capacityMcft: 3300),
-        Reservoir(name: 'Salvador', storageMcft: 1690, capacityMcft: 3645),
+      observedAt: today,
+      reservoirs: [
+        for (final (name, _, capacity) in _cities)
+          Reservoir(
+            name: name,
+            storageMcft: finalStorage[name]!,
+            capacityMcft: capacity,
+          ),
       ],
       rainfall: rainfall,
+      reservoirHistory: history,
     );
   }
 }
