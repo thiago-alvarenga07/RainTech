@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_spacing.dart';
+import '../widgets/section_header.dart';
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
@@ -14,21 +17,16 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Preferências')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        padding: AppSpacing.page,
         children: [
-          Text(
-            'APARÊNCIA',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              letterSpacing: 1.1,
-              color: colors.primary,
-              fontWeight: FontWeight.w700,
-            ),
+          const SectionHeader(
+            eyebrow: 'Aparência',
+            title: 'Tema do aplicativo',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.md),
           Card(
             child: SwitchListTile(
               secondary: Icon(
@@ -44,7 +42,6 @@ class SettingsPage extends StatelessWidget {
               onChanged: onDarkModeChanged,
             ),
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );

@@ -6,6 +6,7 @@ import 'models/water_snapshot.dart';
 import 'screens/forecast_page.dart';
 import 'screens/home_page.dart';
 import 'screens/settings_page.dart';
+import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,27 +58,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    const seedColor = Color(0xFF087E8B);
-
     return MaterialApp(
       title: 'RainTech',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF4F8F8),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       home: MainNavigation(
         repository: widget.repository,
         isDarkMode: _themeMode == ThemeMode.dark,

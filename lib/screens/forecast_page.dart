@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_spacing.dart';
 import '../models/water_snapshot.dart';
+import '../widgets/info_banner.dart';
+import '../widgets/section_header.dart';
 import '../widgets/snapshot_view.dart';
 import '../widgets/water_format.dart';
 
@@ -42,34 +45,20 @@ class ForecastPage extends StatelessWidget {
           );
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+            padding: AppSpacing.page,
             children: [
-              Text(
-                'TENDÊNCIA DE CHUVA',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  letterSpacing: 1.1,
-                  color: colors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+              const SectionHeader(
+                eyebrow: 'Tendência de chuva',
+                title: 'Próximos dias',
+                subtitle:
+                    'Referência calculada com os registros recentes de precipitação.',
               ),
-              const SizedBox(height: 5),
-              Text(
-                'Próximos dias',
-                style: Theme.of(context).textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Referência calculada com os registros recentes de precipitação.',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: colors.onSurfaceVariant),
-              ),
-              const SizedBox(height: 18),
+              const SizedBox(height: AppSpacing.lg),
               Card(
                 color: colors.primaryContainer,
                 elevation: 0,
                 child: Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: AppSpacing.card,
                   child: Row(
                     children: [
                       Icon(
@@ -77,7 +66,7 @@ class ForecastPage extends StatelessWidget {
                         size: 30,
                         color: colors.onPrimaryContainer,
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +77,7 @@ class ForecastPage extends StatelessWidget {
                                 color: colors.onPrimaryContainer,
                               ),
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               formatMillimeters(
                                 snapshot.recentSaoPauloRainfallAverage,
@@ -111,58 +100,30 @@ class ForecastPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Última leitura por cidade',
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+              const SizedBox(height: AppSpacing.xl),
+              const SubsectionTitle('Última leitura por cidade'),
+              ...snapshot.rainfall.last.gaugeReadings.map(
+                (reading) => _GaugeTile(reading: reading),
               ),
-              const SizedBox(height: 10),
-              ...snapshot.rainfall.last.gaugeReadings.asMap().entries.map(
-                (entry) => _GaugeTile(
-                  reading: entry.value,
-                  displayName: brazilianCityDisplayNames[entry.key],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
+              const SizedBox(height: AppSpacing.md),
+              const SubsectionTitle(
                 'Estimativa de São Paulo • próximos 5 dias',
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 4),
               Text(
                 'Calculada somente com as leituras recentes de chuva de São Paulo.',
                 style: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(color: colors.onSurfaceVariant),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.md),
               ...forecast.map(
                 (day) => _ForecastTile(day: day, maxRainfall: maxRain),
               ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colors.tertiaryContainer.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline, color: colors.onTertiaryContainer),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        isDemo
-                            ? 'Dados ilustrativos. A estimativa usa somente os registros de São Paulo; não é uma previsão meteorológica.'
-                            : 'A estimativa repete a média dos últimos 7 registros de chuva de São Paulo; não é uma previsão meteorológica.',
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(color: colors.onTertiaryContainer),
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: AppSpacing.sm),
+              InfoBanner(
+                tone: InfoBannerTone.warning,
+                text: isDemo
+                    ? 'Dados ilustrativos. A estimativa usa somente os registros de São Paulo; não é uma previsão meteorológica.'
+                    : 'A estimativa repete a média dos últimos 7 registros de chuva de São Paulo; não é uma previsão meteorológica.',
               ),
             ],
           );
@@ -182,13 +143,9 @@ class ForecastPage extends StatelessWidget {
 }
 
 class _GaugeTile extends StatelessWidget {
-  const _GaugeTile({
-    required this.reading,
-    required this.displayName,
-  });
+  const _GaugeTile({required this.reading});
 
   final RainGaugeReading reading;
-  final String displayName;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +154,7 @@ class _GaugeTile extends StatelessWidget {
       child: ListTile(
         dense: true,
         leading: const Icon(Icons.location_on_outlined),
-        title: Text(displayName),
+        title: Text(reading.name),
         trailing: Text(
           formatMillimeters(reading.rainfallMm),
           style: const TextStyle(fontWeight: FontWeight.w600),
