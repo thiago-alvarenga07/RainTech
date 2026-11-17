@@ -1,10 +1,3 @@
-const brazilianCityDisplayNames = [
-  'São Paulo',
-  'Rio de Janeiro',
-  'Fortaleza',
-  'Salvador',
-];
-
 class Reservoir {
   const Reservoir({
     required this.name,
@@ -19,6 +12,18 @@ class Reservoir {
   double get fillRatio => capacityMcft <= 0
       ? 0
       : (storageMcft / capacityMcft).clamp(0.0, 1.0).toDouble();
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'storageMcft': storageMcft,
+    'capacityMcft': capacityMcft,
+  };
+
+  factory Reservoir.fromJson(Map<String, dynamic> json) => Reservoir(
+    name: json['name'] as String,
+    storageMcft: (json['storageMcft'] as num).toDouble(),
+    capacityMcft: (json['capacityMcft'] as num).toDouble(),
+  );
 }
 
 class RainObservation {
@@ -45,6 +50,23 @@ class RainObservation {
     RainGaugeReading(name: 'Fortaleza', rainfallMm: redhillsMm),
     RainGaugeReading(name: 'Salvador', rainfallMm: chembarambakkamMm),
   ];
+
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso8601String(),
+    'poondiMm': poondiMm,
+    'cholavaramMm': cholavaramMm,
+    'redhillsMm': redhillsMm,
+    'chembarambakkamMm': chembarambakkamMm,
+  };
+
+  factory RainObservation.fromJson(Map<String, dynamic> json) =>
+      RainObservation(
+        date: DateTime.parse(json['date'] as String),
+        poondiMm: (json['poondiMm'] as num).toDouble(),
+        cholavaramMm: (json['cholavaramMm'] as num).toDouble(),
+        redhillsMm: (json['redhillsMm'] as num).toDouble(),
+        chembarambakkamMm: (json['chembarambakkamMm'] as num).toDouble(),
+      );
 }
 
 class RainGaugeReading {
@@ -64,6 +86,24 @@ class WaterSnapshot {
   final DateTime observedAt;
   final List<Reservoir> reservoirs;
   final List<RainObservation> rainfall;
+
+  bool get isEmpty => reservoirs.isEmpty || rainfall.isEmpty;
+
+  Map<String, dynamic> toJson() => {
+    'observedAt': observedAt.toIso8601String(),
+    'reservoirs': reservoirs.map((r) => r.toJson()).toList(),
+    'rainfall': rainfall.map((r) => r.toJson()).toList(),
+  };
+
+  factory WaterSnapshot.fromJson(Map<String, dynamic> json) => WaterSnapshot(
+    observedAt: DateTime.parse(json['observedAt'] as String),
+    reservoirs: (json['reservoirs'] as List)
+        .map((r) => Reservoir.fromJson(r as Map<String, dynamic>))
+        .toList(),
+    rainfall: (json['rainfall'] as List)
+        .map((r) => RainObservation.fromJson(r as Map<String, dynamic>))
+        .toList(),
+  );
 
   double get totalStorageMcft =>
       reservoirs.fold(0.0, (total, reservoir) => total + reservoir.storageMcft);

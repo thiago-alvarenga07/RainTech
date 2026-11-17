@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/theme/app_spacing.dart';
+import '../state/settings_state.dart';
 import '../widgets/section_header.dart';
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({
-    super.key,
-    required this.isDarkMode,
-    required this.onDarkModeChanged,
-    required this.isSupabaseConnected,
-  });
-
-  final bool isDarkMode;
-  final ValueChanged<bool> onDarkModeChanged;
-  final bool isSupabaseConnected;
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsState>();
     return Scaffold(
       appBar: AppBar(title: const Text('Preferências')),
       body: ListView(
@@ -30,16 +24,16 @@ class SettingsPage extends StatelessWidget {
           Card(
             child: SwitchListTile(
               secondary: Icon(
-                isDarkMode
+                settings.isDarkMode
                     ? Icons.dark_mode_outlined
                     : Icons.light_mode_outlined,
               ),
               title: const Text('Modo escuro'),
               subtitle: Text(
-                isDarkMode ? 'Tema escuro ativo' : 'Tema claro ativo',
+                settings.isDarkMode ? 'Tema escuro ativo' : 'Tema claro ativo',
               ),
-              value: isDarkMode,
-              onChanged: onDarkModeChanged,
+              value: settings.isDarkMode,
+              onChanged: settings.setDarkMode,
             ),
           ),
         ],

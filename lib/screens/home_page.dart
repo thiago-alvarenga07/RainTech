@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../core/routes/app_routes.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import '../models/water_snapshot.dart';
+import '../state/water_data_state.dart';
 import '../widgets/info_banner.dart';
 import '../widgets/progress_tile.dart';
 import '../widgets/risk_card.dart';
@@ -11,40 +14,31 @@ import '../widgets/snapshot_view.dart';
 import '../widgets/water_format.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({
-    super.key,
-    required this.snapshotFuture,
-    required this.isDemo,
-    required this.onRefresh,
-  });
-
-  final Future<WaterSnapshot> snapshotFuture;
-  final bool isDemo;
-  final VoidCallback onRefresh;
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final data = context.read<WaterDataState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('RainTech'),
         actions: [
           IconButton(
             tooltip: 'Atualizar dados',
-            onPressed: onRefresh,
+            onPressed: data.load,
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: SnapshotView(
-        snapshotFuture: snapshotFuture,
-        onRefresh: onRefresh,
-        builder: (snapshot) {
+        builder: (context, snapshot) {
           final risk = _riskFor(snapshot);
           final daysSinceUpdate = DateTime.now()
               .difference(snapshot.observedAt)
               .inDays;
 
           return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: AppSpacing.page,
             children: [
               SectionHeader(
@@ -53,12 +47,13 @@ class HomePage extends StatelessWidget {
                 subtitle:
                     'Dados atualizados em ${formatDate(snapshot.observedAt)}',
               ),
-              if (isDemo || daysSinceUpdate > 2) ...[
+              const OfflineBanner(),
+              if (data.isDemo || daysSinceUpdate > 2) ...[
                 const SizedBox(height: AppSpacing.md),
                 InfoBanner(
-                  icon: isDemo ? Icons.science_outlined : Icons.schedule,
+                  icon: data.isDemo ? Icons.science_outlined : Icons.schedule,
                   tone: InfoBannerTone.warning,
-                  text: isDemo
+                  text: data.isDemo
                       ? 'Modo demonstração: conecte seu Supabase para usar os dados da região.'
                       : 'Os dados disponíveis têm mais de 2 dias; confirme a situação antes de agir.',
                 ),
@@ -78,6 +73,7 @@ class HomePage extends StatelessWidget {
                   ratio: reservoir.fillRatio,
                   caption:
                       '${formatMcft(reservoir.storageMcft)} / ${formatMcft(reservoir.capacityMcft)} MCFT',
+                  onTap: () => AppRoutes.openCity(context, reservoir.name),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),

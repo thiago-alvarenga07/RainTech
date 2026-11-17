@@ -1,42 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/theme/app_spacing.dart';
 import '../models/water_snapshot.dart';
+import '../state/water_data_state.dart';
 import '../widgets/info_banner.dart';
 import '../widgets/section_header.dart';
 import '../widgets/snapshot_view.dart';
 import '../widgets/water_format.dart';
 
 class ForecastPage extends StatelessWidget {
-  const ForecastPage({
-    super.key,
-    required this.snapshotFuture,
-    required this.isDemo,
-    required this.onRefresh,
-  });
-
-  final Future<WaterSnapshot> snapshotFuture;
-  final bool isDemo;
-  final VoidCallback onRefresh;
+  const ForecastPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final data = context.read<WaterDataState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Precipitação'),
         actions: [
           IconButton(
             tooltip: 'Atualizar dados',
-            onPressed: onRefresh,
+            onPressed: data.load,
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: SnapshotView(
-        snapshotFuture: snapshotFuture,
-        onRefresh: onRefresh,
-        builder: (snapshot) {
+        builder: (context, snapshot) {
           final forecast = _estimateNextDays(snapshot);
           final maxRain = forecast.fold<double>(
             0,
@@ -45,6 +37,7 @@ class ForecastPage extends StatelessWidget {
           );
 
           return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: AppSpacing.page,
             children: [
               const SectionHeader(
@@ -53,6 +46,7 @@ class ForecastPage extends StatelessWidget {
                 subtitle:
                     'Referência calculada com os registros recentes de precipitação.',
               ),
+              const OfflineBanner(),
               const SizedBox(height: AppSpacing.lg),
               Card(
                 color: colors.primaryContainer,
@@ -121,7 +115,7 @@ class ForecastPage extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               InfoBanner(
                 tone: InfoBannerTone.warning,
-                text: isDemo
+                text: data.isDemo
                     ? 'Dados ilustrativos. A estimativa usa somente os registros de São Paulo; não é uma previsão meteorológica.'
                     : 'A estimativa repete a média dos últimos 7 registros de chuva de São Paulo; não é uma previsão meteorológica.',
               ),

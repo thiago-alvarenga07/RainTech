@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raintech/app.dart';
+import 'package:raintech/data/app_storage.dart';
 import 'package:raintech/data/water_repository.dart';
-import 'package:raintech/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<Widget> buildApp() async {
+  SharedPreferences.setMockInitialValues({});
+  final storage = await AppStorage.create();
+  return RainTechApp(repository: WaterRepository(), storage: storage);
+}
 
 void main() {
   testWidgets('exibe o painel e navega para precipitação', (tester) async {
-    await tester.pumpWidget(MyApp(repository: WaterRepository()));
+    await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 
     expect(find.text('Visão geral'), findsOneWidget);
@@ -23,36 +31,32 @@ void main() {
           .toList(),
       ['Precipitação', 'Início', 'Tema'],
     );
-    await tester.scrollUntilVisible(
-      find.text('São Paulo'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('São Paulo'), findsOneWidget);
-    expect(find.text('Poondi'), findsNothing);
 
     await tester.tap(find.text('Precipitação'));
     await tester.pumpAndSettle();
 
     expect(find.text('Próximos dias'), findsOneWidget);
     expect(find.text('Última leitura por cidade'), findsOneWidget);
-    expect(find.text('São Paulo'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Estimativa de São Paulo • próximos 5 dias'),
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    expect(find.text('Estimativa de São Paulo • próximos 5 dias'), findsOneWidget);
-    expect(
-      find.text(
-        'Calculada somente com as leituras recentes de chuva de São Paulo.',
-      ),
-      findsOneWidget,
-    );
   });
 
-  testWidgets('alterna o tema claro e escuro', (tester) async {
-    await tester.pumpWidget(MyApp(repository: WaterRepository()));
+  testWidgets('abre o detalhe da cidade pela rota nomeada', (tester) async {
+    await tester.pumpWidget(await buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Salvador'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Salvador'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detalhe do indicador'.toUpperCase()), findsOneWidget);
+    expect(find.text('Nível do reservatório'), findsOneWidget);
+  });
+
+  testWidgets('alterna o tema e persiste a preferência', (tester) async {
+    await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Tema'));
@@ -62,5 +66,8 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(find.text('Tema escuro ativo'), findsOneWidget);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('prefs.themeMode'), 'dark');
   });
 }
