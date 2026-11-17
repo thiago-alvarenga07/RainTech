@@ -156,5 +156,4 @@ disponível na seção [Releases](https://github.com/thiago-alvarenga07/RainTech
 
 ## Licença
 
-Projeto acadêmico FIAP — Global Solution 2026.2. O repositório não declara uma
-licença open-source específica.
+Projeto acadêmico FIAP — Global Solution 2026.2.
