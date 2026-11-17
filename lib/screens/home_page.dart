@@ -5,7 +5,9 @@ import '../core/routes/app_routes.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
 import '../models/water_snapshot.dart';
+import '../state/alerts_state.dart';
 import '../state/water_data_state.dart';
+import '../widgets/alert_tile.dart';
 import '../widgets/info_banner.dart';
 import '../widgets/progress_tile.dart';
 import '../widgets/risk_card.dart';
@@ -63,6 +65,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               _ReserveCard(snapshot: snapshot),
               const SizedBox(height: AppSpacing.xl),
+              const _PriorityAlerts(),
               SubsectionTitle(
                 'Cidades monitoradas',
                 trailing: '${snapshot.reservoirs.length} cidades',
@@ -163,6 +166,29 @@ class _ReserveCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+class _PriorityAlerts extends StatelessWidget {
+  const _PriorityAlerts();
+
+  @override
+  Widget build(BuildContext context) {
+    final alerts = context.watch<AlertsState>();
+    final top = alerts.pending.take(2).toList();
+    if (top.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SubsectionTitle(
+          'Alertas prioritários',
+          trailing: '${alerts.pending.length} pendentes',
+        ),
+        ...top.map((alert) => AlertTile(alert: alert)),
+        const SizedBox(height: AppSpacing.xl),
+      ],
     );
   }
 }

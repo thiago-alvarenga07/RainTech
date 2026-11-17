@@ -28,6 +28,28 @@ abstract final class Indicators {
     return denominator == 0 ? 0 : numerator / denominator;
   }
 
+  static ({double slope, double intercept, double r2}) linearFit(
+    List<double> values,
+  ) {
+    final n = values.length;
+    if (n < 2) {
+      return (slope: 0, intercept: values.isEmpty ? 0 : values.first, r2: 0);
+    }
+    final m = slope(values);
+    final meanX = (n - 1) / 2;
+    final meanY = average(values);
+    final b = meanY - m * meanX;
+    var ssRes = 0.0;
+    var ssTot = 0.0;
+    for (var i = 0; i < n; i++) {
+      final predicted = m * i + b;
+      ssRes += (values[i] - predicted) * (values[i] - predicted);
+      ssTot += (values[i] - meanY) * (values[i] - meanY);
+    }
+    final r2 = ssTot == 0 ? 1.0 : (1 - ssRes / ssTot).clamp(0.0, 1.0);
+    return (slope: m, intercept: b, r2: r2.toDouble());
+  }
+  
   static double average(Iterable<double> values) =>
       values.isEmpty ? 0 : values.reduce((a, b) => a + b) / values.length;
 

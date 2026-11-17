@@ -7,6 +7,7 @@ import 'data/app_storage.dart';
 import 'data/water_repository.dart';
 import 'state/settings_state.dart';
 import 'state/water_data_state.dart';
+import 'state/alerts_state.dart';
 
 /// Raiz do app: registra o estado global e configura tema e rotas.
 class RainTechApp extends StatelessWidget {
@@ -26,6 +27,10 @@ class RainTechApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SettingsState(storage)),
         ChangeNotifierProvider(
           create: (_) => WaterDataState(repository, storage)..load(),
+        ),
+        ChangeNotifierProxyProvider<WaterDataState, AlertsState>(
+          create: (_) => AlertsState(storage),
+          update: (_, data, alerts) => alerts!..updateFrom(data),
         ),
       ],
       child: Consumer<SettingsState>(

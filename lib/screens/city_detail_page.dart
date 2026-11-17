@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../analytics/indicators.dart';
 import '../core/theme/app_spacing.dart';
@@ -10,6 +11,8 @@ import '../widgets/section_header.dart';
 import '../widgets/snapshot_view.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/water_format.dart';
+import '../state/alerts_state.dart';
+import '../widgets/alert_tile.dart';
 
 class CityDetailPage extends StatelessWidget {
   const CityDetailPage({super.key, required this.cityName});
@@ -35,6 +38,8 @@ class CityDetailPage extends StatelessWidget {
           final rain = snapshot.rainHistoryFor(cityName);
           final last14 = rain.length > 14 ? rain.sublist(rain.length - 14) : rain;
           final autonomy = DemandModel.autonomyDays(reservoir);
+          final alertsState = context.watch<AlertsState>();
+          final cityAlerts = alertsState.forCity(cityName);
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -48,6 +53,19 @@ class CityDetailPage extends StatelessWidget {
               ),
               const OfflineBanner(),
               const SizedBox(height: AppSpacing.lg),
+              if (cityAlerts.isNotEmpty) ...[
+                SubsectionTitle(
+                  'Alertas desta cidade',
+                  trailing: '${cityAlerts.length}',
+                ),
+                ...cityAlerts.map(
+                  (alert) => AlertTile(
+                    alert: alert,
+                    review: alertsState.reviewOf(alert.id),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               StatGrid(
                 children: [
                   StatCard(

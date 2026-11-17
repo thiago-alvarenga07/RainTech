@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/water_snapshot.dart';
 
+import '../models/alert.dart';
+
 /// Persistência local (SharedPreferences): cache dos dados e preferências.
 /// Permite que o app continue útil sem conexão.
 class AppStorage {
@@ -17,6 +19,7 @@ class AppStorage {
   static const _snapshotKey = 'cache.snapshot';
   static const _snapshotSavedAtKey = 'cache.snapshot.savedAt';
   static const _themeModeKey = 'prefs.themeMode';
+  static const _alertReviewsKey = 'alerts.reviews';
 
   Future<void> saveSnapshot(WaterSnapshot snapshot) async {
     await _prefs.setString(_snapshotKey, jsonEncode(snapshot.toJson()));
@@ -46,4 +49,28 @@ class AppStorage {
 
   Future<void> setThemeMode(String value) =>
       _prefs.setString(_themeModeKey, value);
+
+  
+  
+  // ---------- Decisões humanas sobre alertas ----------
+
+  Map<String, AlertReview> loadAlertReviews() {
+    final raw = _prefs.getString(_alertReviewsKey);
+    if (raw == null) return {};
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map.map(
+        (id, value) =>
+            MapEntry(id, AlertReview.fromJson(value as Map<String, dynamic>)),
+      );
+    } on Object {
+      return {};
+    }
+  }
+
+  Future<void> saveAlertReviews(Map<String, AlertReview> reviews) =>
+      _prefs.setString(
+        _alertReviewsKey,
+        jsonEncode(reviews.map((id, review) => MapEntry(id, review.toJson()))),
+      );
 }

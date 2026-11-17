@@ -4,6 +4,7 @@ import 'package:raintech/app.dart';
 import 'package:raintech/data/app_storage.dart';
 import 'package:raintech/data/water_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:raintech/widgets/alert_tile.dart';
 
 Future<Widget> buildApp() async {
   SharedPreferences.setMockInitialValues({});
@@ -29,7 +30,7 @@ void main() {
       navigation.destinations
           .map((destination) => (destination as NavigationDestination).label)
           .toList(),
-      ['Início', 'Painéis', 'Ajustes'],
+      ['Início', 'Painéis', 'Alertas', 'Ajustes'],
     );
 
     await tester.tap(find.text('Painéis'));
@@ -76,5 +77,47 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('prefs.themeMode'), 'dark');
+  });
+  
+  testWidgets('abre um alerta e exige justificativa para decidir', (tester) async {
+    await tester.pumpWidget(await buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Alertas'));
+    await tester.pumpAndSettle();
+    expect(find.text('A decisão final é humana'), findsOneWidget);
+
+    await tester.tap(find.byType(AlertTile).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Justificativa (evidências)'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Limitações e quando não confiar'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Limitações e quando não confiar'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Confirmar alerta'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Confirmar alerta'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Registrar'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Descreva o motivo com pelo menos 10 caracteres.'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byType(TextFormField),
+      'Confirmado com a equipe técnica.',
+    );
+    await tester.tap(find.text('Registrar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Desfazer decisão'), findsOneWidget);
   });
 }

@@ -114,13 +114,13 @@ class WaterRepository {
 
     const finalStorage = {
       'São Paulo': 1370.0,
-      'Rio de Janeiro': 390.0,
+      'Rio de Janeiro': 300.0,
       'Fortaleza': 1750.0,
       'Salvador': 1690.0,
     };
     const dailyDrop = {
       'São Paulo': 9.0,
-      'Rio de Janeiro': 3.5,
+      'Rio de Janeiro': 4.5,
       'Fortaleza': 7.0,
       'Salvador': 4.0,
     };

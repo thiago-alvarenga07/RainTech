@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../screens/alerts/alert_detail_page.dart';
 import '../../screens/city_detail_page.dart';
 import '../../screens/main_navigation.dart';
 
@@ -7,6 +8,8 @@ import '../../screens/main_navigation.dart';
 abstract final class AppRoutes {
   static const home = '/';
   static const cityDetail = '/cidade';
+  static const alertDetail = '/alerta';
+
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -15,6 +18,12 @@ abstract final class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => CityDetailPage(cityName: cityName),
+        );
+      case alertDetail:
+        final alertId = settings.arguments as String;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => AlertDetailPage(alertId: alertId),
         );
       case home:
       default:
@@ -27,4 +36,8 @@ abstract final class AppRoutes {
 
   static Future<void> openCity(BuildContext context, String cityName) =>
       Navigator.pushNamed(context, cityDetail, arguments: cityName);
+
+
+  static Future<void> openAlert(BuildContext context, String alertId) =>
+      Navigator.pushNamed(context, alertDetail, arguments: alertId);
 }
