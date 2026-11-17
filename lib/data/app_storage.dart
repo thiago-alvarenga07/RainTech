@@ -19,7 +19,10 @@ class AppStorage {
   static const _snapshotKey = 'cache.snapshot';
   static const _snapshotSavedAtKey = 'cache.snapshot.savedAt';
   static const _themeModeKey = 'prefs.themeMode';
+  static const _highContrastKey = 'prefs.highContrast';
+  static const _fontScaleKey = 'prefs.fontScale';
   static const _alertReviewsKey = 'alerts.reviews';
+  static const _reviewStorageConsentKey = 'privacy.reviewStorageConsent';
 
   Future<void> saveSnapshot(WaterSnapshot snapshot) async {
     await _prefs.setString(_snapshotKey, jsonEncode(snapshot.toJson()));
@@ -50,8 +53,22 @@ class AppStorage {
   Future<void> setThemeMode(String value) =>
       _prefs.setString(_themeModeKey, value);
 
-  
-  
+  bool get highContrast => _prefs.getBool(_highContrastKey) ?? false;
+
+  Future<void> setHighContrast(bool value) =>
+      _prefs.setBool(_highContrastKey, value);
+
+  double get fontScale => _prefs.getDouble(_fontScaleKey) ?? 1.0;
+
+  Future<void> setFontScale(double value) =>
+      _prefs.setDouble(_fontScaleKey, value);
+
+  bool get reviewStorageConsent =>
+      _prefs.getBool(_reviewStorageConsentKey) ?? false;
+
+  Future<void> setReviewStorageConsent(bool value) =>
+      _prefs.setBool(_reviewStorageConsentKey, value);
+
   // ---------- Decisões humanas sobre alertas ----------
 
   Map<String, AlertReview> loadAlertReviews() {
@@ -73,4 +90,6 @@ class AppStorage {
         _alertReviewsKey,
         jsonEncode(reviews.map((id, review) => MapEntry(id, review.toJson()))),
       );
+
+  Future<void> clearAlertReviews() => _prefs.remove(_alertReviewsKey);
 }

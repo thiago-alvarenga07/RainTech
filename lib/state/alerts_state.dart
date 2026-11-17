@@ -7,10 +7,15 @@ import '../models/water_snapshot.dart';
 import 'water_data_state.dart';
 
 class AlertsState extends ChangeNotifier {
-  AlertsState(this._storage) : _reviews = _storage.loadAlertReviews();
+  AlertsState(this._storage)
+    : _canPersistReviews = _storage.reviewStorageConsent,
+      _reviews = _storage.reviewStorageConsent
+          ? _storage.loadAlertReviews()
+          : {};
 
   final AppStorage _storage;
   final Map<String, AlertReview> _reviews;
+  bool _canPersistReviews;
   final AlertEngine _engine = const AlertEngine();
 
   List<PredictiveAlert> _alerts = const [];
@@ -18,6 +23,7 @@ class AlertsState extends ChangeNotifier {
   bool _lastFromCache = false;
 
   List<PredictiveAlert> get alerts => _alerts;
+  bool get canPersistReviews => _canPersistReviews;
 
 
   List<PredictiveAlert> get pending =>
@@ -30,6 +36,24 @@ class AlertsState extends ChangeNotifier {
       _alerts.where((a) => a.city == city).toList();
 
   AlertReview? reviewOf(String id) => _reviews[id];
+
+  Future<void> setReviewStorageConsent(bool enabled) async {
+    if (enabled == _canPersistReviews) return;
+
+    if (enabled) {
+      await _storage.setReviewStorageConsent(true);
+      _canPersistReviews = true;
+      notifyListeners();
+      await _storage.saveAlertReviews(_reviews);
+      return;
+    }
+
+    await _storage.clearAlertReviews();
+    await _storage.setReviewStorageConsent(false);
+    _canPersistReviews = false;
+    _reviews.clear();
+    notifyListeners();
+  }
 
   /// Chamado pelo ProxyProvider sempre que [WaterDataState] notifica.
   void updateFrom(WaterDataState data) {
@@ -66,12 +90,16 @@ class AlertsState extends ChangeNotifier {
       reviewedAt: DateTime.now(),
     );
     notifyListeners();
-    await _storage.saveAlertReviews(_reviews);
+    if (_canPersistReviews) {
+      await _storage.saveAlertReviews(_reviews);
+    }
   }
 
   Future<void> undoReview(String alertId) async {
     _reviews.remove(alertId);
     notifyListeners();
-    await _storage.saveAlertReviews(_reviews);
+    if (_canPersistReviews) {
+      await _storage.saveAlertReviews(_reviews);
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../analytics/indicators.dart';
 import '../core/routes/app_routes.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_theme.dart';
@@ -64,6 +65,8 @@ class HomePage extends StatelessWidget {
               RiskCard(level: risk.$1, title: risk.$2, description: risk.$3),
               const SizedBox(height: AppSpacing.sm),
               _ReserveCard(snapshot: snapshot),
+              const SizedBox(height: AppSpacing.sm),
+              const _SocialBenefitCard(),
               const SizedBox(height: AppSpacing.xl),
               const _PriorityAlerts(),
               SubsectionTitle(
@@ -161,6 +164,52 @@ class _ReserveCard extends StatelessWidget {
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialBenefitCard extends StatelessWidget {
+  const _SocialBenefitCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final population = DemandModel.totalPopulation;
+    final populationInMillions = (population / 1e6).toStringAsFixed(2);
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label:
+          'Indicador de benefício social: população potencialmente atendida, '
+          '$populationInMillions milhões de pessoas. Estimativa sintética para demonstração.',
+      child: Card(
+        child: Padding(
+          padding: AppSpacing.card,
+          child: Row(
+            children: [
+              Icon(
+                Icons.groups_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Benefício social • população potencialmente atendida',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    Text(
+                      '$populationInMillions mi pessoas • estimativa sintética',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

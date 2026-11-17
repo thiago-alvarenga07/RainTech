@@ -38,12 +38,43 @@ class RainTechApp extends StatelessWidget {
           title: 'RainTech',
           debugShowCheckedModeBanner: false,
           themeMode: settings.themeMode,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
+          theme: AppTheme.light(highContrast: settings.highContrast),
+          darkTheme: AppTheme.dark(highContrast: settings.highContrast),
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: _UserTextScaler(media.textScaler, settings.fontScale),
+              ),
+              child: child!,
+            );
+          },
           initialRoute: AppRoutes.home,
           onGenerateRoute: AppRoutes.onGenerateRoute,
         ),
       ),
     );
   }
+}
+
+class _UserTextScaler extends TextScaler {
+  const _UserTextScaler(this.systemScaler, this.userScale);
+
+  final TextScaler systemScaler;
+  final double userScale;
+
+  @override
+  double scale(double fontSize) => systemScaler.scale(fontSize * userScale);
+
+  @override
+  double get textScaleFactor => systemScaler.scale(userScale);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _UserTextScaler &&
+      other.systemScaler == systemScaler &&
+      other.userScale == userScale;
+
+  @override
+  int get hashCode => Object.hash(systemScaler, userScale);
 }

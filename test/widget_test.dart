@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raintech/app.dart';
 import 'package:raintech/data/app_storage.dart';
 import 'package:raintech/data/water_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:raintech/models/alert.dart';
+import 'package:raintech/state/alerts_state.dart';
 import 'package:raintech/widgets/alert_tile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Widget> buildApp() async {
   SharedPreferences.setMockInitialValues({});
@@ -13,11 +15,36 @@ Future<Widget> buildApp() async {
 }
 
 void main() {
+  test(
+    'persists alert reviews only with consent and deletes on revocation',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = await AppStorage.create();
+      final alerts = AlertsState(storage);
+
+      await alerts.review(
+        'alert-id',
+        AlertDecision.confirmed,
+        'Confirmado com evidências locais.',
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('alerts.reviews'), isNull);
+
+      await alerts.setReviewStorageConsent(true);
+      expect(prefs.getString('alerts.reviews'), isNotNull);
+
+      await alerts.setReviewStorageConsent(false);
+      expect(prefs.getString('alerts.reviews'), isNull);
+      expect(alerts.reviewOf('alert-id'), isNull);
+    },
+  );
+
   testWidgets('exibe a visão geral e navega pelos 3 painéis', (tester) async {
     await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 
     expect(find.text('Visão geral'), findsOneWidget);
+    expect(find.textContaining('Benefício social'), findsOneWidget);
     expect(
       find.text(
         'Modo demonstração: conecte seu Supabase para usar os dados da região.',
@@ -71,15 +98,58 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Tema claro ativo'), findsOneWidget);
 
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byKey(const ValueKey('dark-mode-switch')));
     await tester.pumpAndSettle();
     expect(find.text('Tema escuro ativo'), findsOneWidget);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('prefs.themeMode'), 'dark');
   });
-  
-  testWidgets('abre um alerta e exige justificativa para decidir', (tester) async {
+
+  testWidgets('salva preferências de acessibilidade e consentimento', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ajustes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('high-contrast-switch')));
+    await tester.pumpAndSettle();
+    final settingsScrollable = find.descendant(
+      of: find.byKey(const ValueKey('settings-list')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('font-scale-slider')),
+      250,
+      scrollable: settingsScrollable,
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const ValueKey('font-scale-slider')),
+      const Offset(80, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('review-storage-consent')),
+      250,
+      scrollable: settingsScrollable,
+    );
+    await tester.drag(settingsScrollable, const Offset(0, -180));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('review-storage-consent')));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('prefs.highContrast'), isTrue);
+    expect(prefs.getBool('privacy.reviewStorageConsent'), isTrue);
+    expect(prefs.getDouble('prefs.fontScale'), greaterThan(1.0));
+  });
+
+  testWidgets('abre um alerta e exige justificativa para decidir', (
+    tester,
+  ) async {
     await tester.pumpWidget(await buildApp());
     await tester.pumpAndSettle();
 

@@ -244,6 +244,8 @@ class _DecisionDialogState extends State<_DecisionDialog> {
             hintText: confirming
                 ? 'Ex.: confirmado com a operadora; comunicação será avaliada.'
                 : 'Ex.: leitura incorreta, já corrigida pela operadora.',
+            helperText:
+                'A justificativa pode ser salva localmente se você autorizar nas Preferências. Não inclua dados pessoais.',
           ),
           validator: (value) => (value ?? '').trim().length < 10
               ? 'Descreva o motivo com pelo menos 10 caracteres.'
