@@ -154,6 +154,10 @@ As tabelas precisam permitir a leitura necessária pela chave pública. Não use
 uma chave `service_role` no aplicativo. Uma build Android para instalação está
 disponível na seção [Releases](https://github.com/thiago-alvarenga07/RainTech/releases).
 
+## Vídeo
+
+https://youtu.be/TAV1ZqOC6Mw?si=z37dsqlZTcUhgD9k 
+
 ## Licença
 
 Projeto acadêmico FIAP — Global Solution 2026.2.
